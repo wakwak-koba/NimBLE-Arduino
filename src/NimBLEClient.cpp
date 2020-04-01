@@ -130,6 +130,7 @@ bool NimBLEClient::connect(NimBLEAddress address, uint8_t type, bool refreshServ
     
     int rc = 0;
     m_peerAddress = address;
+	m_peerType = type;
     
     ble_addr_t peerAddrt;
     memcpy(&peerAddrt.val, address.getNative(),6);
@@ -149,7 +150,7 @@ bool NimBLEClient::connect(NimBLEAddress address, uint8_t type, bool refreshServ
     if (rc != 0) {
         NIMBLE_LOGE(LOG_TAG, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s, rc=%d; %s",
-                    type, 
+                    m_peerType, 
                     m_peerAddress.toString().c_str(),
                     rc, NimBLEUtils::returnCodeToString(BLE_HS_ATT_ERR(rc)));
                     
@@ -321,7 +322,15 @@ uint16_t NimBLEClient::getConnId() {
  */
 NimBLEAddress NimBLEClient::getPeerAddress() {
     return m_peerAddress;
-} // getAddress
+} // getPeerAddress
+
+
+/**
+ * @brief Retrieve the type of the peer.
+ */
+uint8_t NimBLEClient::getPeerType() {
+    return m_peerType;
+} // getPeerType
 
 
 /**
@@ -697,11 +706,13 @@ uint16_t NimBLEClient::getMTU() {
                 return 0; //BLE_HS_ENOTCONN BLE_ATT_ERR_INVALID_HANDLE
             }
             NIMBLE_LOGD(LOG_TAG, "Peer requesting to update connection parameters");
-            NIMBLE_LOGD(LOG_TAG, "MinInterval: %d, MaxInterval: %d, Latency: %d, Timeout: %d",
+            NIMBLE_LOGD(LOG_TAG, "MinInterval: %d, MaxInterval: %d, Latency: %d, Timeout: %d, min_ce_len:%d,max_ce_len:%d",
                                     event->conn_update_req.peer_params->itvl_min,
                                     event->conn_update_req.peer_params->itvl_max,
                                     event->conn_update_req.peer_params->latency,
-                                    event->conn_update_req.peer_params->supervision_timeout);
+                                    event->conn_update_req.peer_params->supervision_timeout,
+                                    event->conn_update_req.peer_params->min_ce_len,
+                                    event->conn_update_req.peer_params->max_ce_len);
             rc = 0;
             // if we set connection params and the peer is asking for new ones, reject them.
             if(client->m_pConnParams != nullptr) {
@@ -709,7 +720,9 @@ uint16_t NimBLEClient::getMTU() {
                 if(event->conn_update_req.peer_params->itvl_min != client->m_pConnParams->itvl_min ||
                     event->conn_update_req.peer_params->itvl_max != client->m_pConnParams->itvl_max ||
                     event->conn_update_req.peer_params->latency != client->m_pConnParams->latency ||
-                    event->conn_update_req.peer_params->supervision_timeout != client->m_pConnParams->supervision_timeout) 
+                    event->conn_update_req.peer_params->supervision_timeout != client->m_pConnParams->supervision_timeout ||
+                    event->conn_update_req.peer_params->min_ce_len != client->m_pConnParams->min_ce_len ||
+                    event->conn_update_req.peer_params->max_ce_len != client->m_pConnParams->max_ce_len)
                 {
                     //event->conn_update_req.self_params->itvl_min = 6;//client->m_pConnParams->itvl_min;
                     rc = BLE_ERR_CONN_PARMS;

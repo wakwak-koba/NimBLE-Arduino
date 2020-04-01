@@ -37,6 +37,7 @@ public:
     bool                                       connect(NimBLEAddress address, uint8_t type = BLE_ADDR_TYPE_PUBLIC, bool refreshServices = true);   // Connect to the remote BLE Server
     int                                        disconnect(uint8_t reason = BLE_ERR_REM_USER_CONN_TERM);                  // Disconnect from the remote BLE Server
     NimBLEAddress                              getPeerAddress();              // Get the address of the remote BLE Server
+    uint8_t                                    getPeerType();;              // Get the type of the remote BLE Server
     int                                        getRssi();                     // Get the RSSI of the remote BLE Server
     std::map<std::string, NimBLERemoteService*>*  getServices();                 // Get a map of the services offered by the remote BLE Server
     NimBLERemoteService*                          getService(const char* uuid);  // Get a reference to a specified service offered by the remote BLE server.
@@ -73,6 +74,7 @@ private:
 //    void                onHostReset();
 
     NimBLEAddress    m_peerAddress = NimBLEAddress("\0\0\0\0\0\0");   // The BD address of the remote server.
+    uint8_t          m_peerType = BLE_ADDR_TYPE_PUBLIC;               // The BD type of the remote server.
     uint16_t         m_conn_id;
     bool             m_haveServices = false;    // Have we previously obtain the set of services from the remote server.
     bool             m_isConnected = false;     // Are we currently connected.
