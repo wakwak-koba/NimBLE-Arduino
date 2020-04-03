@@ -728,6 +728,9 @@ uint16_t NimBLEClient::getMTU() {
                     rc = BLE_ERR_CONN_PARMS;
                 }
             }
+            else {
+                rc = BLE_ERR_CONN_PARMS;
+            }
             if(rc != 0) {
                 NIMBLE_LOGD(LOG_TAG, "Rejected peer params");
             }
