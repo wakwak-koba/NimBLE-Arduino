@@ -720,7 +720,7 @@ uint16_t NimBLEClient::getMTU() {
                 if(event->conn_update_req.peer_params->itvl_min != client->m_pConnParams->itvl_min ||
                     event->conn_update_req.peer_params->itvl_max != client->m_pConnParams->itvl_max ||
                     event->conn_update_req.peer_params->latency != client->m_pConnParams->latency ||
-                    event->conn_update_req.peer_params->supervision_timeout != client->m_pConnParams->supervision_timeout)
+                    event->conn_update_req.peer_params->supervision_timeout != client->m_pConnParams->supervision_timeout) 
                 {
                     //event->conn_update_req.self_params->itvl_min = 6;//client->m_pConnParams->itvl_min;
                     rc = BLE_ERR_CONN_PARMS;
