@@ -33,9 +33,9 @@ class ServerCallbacks: public NimBLEServerCallbacks {
          *  latency, supervision timeout.
          *  Units; Min/Max Intervals: 1.25 millisecond increments.
          *  Latency: number of intervals allowed to skip.
-         *  Timeout: 10 millisecond increments, try for 3x interval time for best results.  
+         *  Timeout: 10 millisecond increments, try for 5x interval time for best results.  
          */
-        pServer->updateConnParams(desc->conn_handle, 24, 48, 0, 18);
+        pServer->updateConnParams(desc->conn_handle, 24, 48, 0, 60);
     };
     void onDisconnect(NimBLEServer* pServer) {
         Serial.println("Client disconnected - start advertising");
@@ -142,6 +142,9 @@ void setup() {
     /** sets device name */
     NimBLEDevice::init("NimBLE-Arduino");
 
+    /** Optional: set the transmit power, default is 3db */
+    NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
+    
     /** Set the IO capabilities of the device, each option will trigger a different pairing method.
      *  BLE_HS_IO_DISPLAY_ONLY    - Passkey pairing
      *  BLE_HS_IO_DISPLAY_YESNO   - Numeric comparison pairing
