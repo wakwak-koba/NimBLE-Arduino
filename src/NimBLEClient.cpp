@@ -697,7 +697,7 @@ uint16_t NimBLEClient::getMTU() {
                 return 0; //BLE_HS_ENOTCONN BLE_ATT_ERR_INVALID_HANDLE
             }
             NIMBLE_LOGD(LOG_TAG, "Peer requesting to update connection parameters");
-            NIMBLE_LOGD(LOG_TAG, "MinInterval: %d, MaxInterval: %d, Latency: %d, Timeout: %d, min_ce_len:%d,max_ce_len:%d",
+            NIMBLE_LOGD(LOG_TAG, "MinInterval: %d, MaxInterval: %d, Latency: %d, Timeout: %d",
                                     event->conn_update_req.peer_params->itvl_min,
                                     event->conn_update_req.peer_params->itvl_max,
                                     event->conn_update_req.peer_params->latency,
