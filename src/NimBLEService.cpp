@@ -43,7 +43,7 @@ NimBLEService::NimBLEService(const char* uuid, uint16_t numHandles, NimBLEServer
  * @param [in] uuid The UUID of the service.
  * @param [in] numHandles The maximum number of handles associated with the service.
  */
-NimBLEService::NimBLEService(NimBLEUUID uuid, uint16_t numHandles, NimBLEServer* pServer) {
+NimBLEService::NimBLEService(const NimBLEUUID &uuid, uint16_t numHandles, NimBLEServer* pServer) {
 	m_uuid      = uuid;
 	m_handle    = NULL_HANDLE;
 	m_pServer   = pServer;
@@ -111,8 +111,9 @@ bool NimBLEService::start() {
             if(numDscs) {
                 // skip 2902 as it's automatically created by NimBLE
                 // if Indicate or Notify flags are set
-                if((pCharacteristic->m_properties & BLE_GATT_CHR_F_INDICATE) || 
-                    (pCharacteristic->m_properties & BLE_GATT_CHR_F_NOTIFY)) {
+                if(((pCharacteristic->m_properties & BLE_GATT_CHR_F_INDICATE) || 
+                    (pCharacteristic->m_properties & BLE_GATT_CHR_F_NOTIFY))  &&
+                     pCharacteristic->getDescriptorByUUID("2902") != nullptr) {
                     numDscs--;
                 }
             }
@@ -247,7 +248,7 @@ NimBLECharacteristic* NimBLEService::createCharacteristic(const char* uuid, uint
  * @param [in] properties - The properties of the characteristic.
  * @return The new BLE characteristic.
  */
-NimBLECharacteristic* NimBLEService::createCharacteristic(NimBLEUUID uuid, uint32_t properties) {
+NimBLECharacteristic* NimBLEService::createCharacteristic(const NimBLEUUID &uuid, uint32_t properties) {
 	NimBLECharacteristic* pCharacteristic = new NimBLECharacteristic(uuid, properties, this);
 	addCharacteristic(pCharacteristic);
     //pCharacteristic->executeCreate(this);
@@ -260,7 +261,7 @@ NimBLECharacteristic* NimBLEService::getCharacteristic(const char* uuid) {
 }
 
 
-NimBLECharacteristic* NimBLEService::getCharacteristic(NimBLEUUID uuid) {
+NimBLECharacteristic* NimBLEService::getCharacteristic(const NimBLEUUID &uuid) {
 	return m_characteristicMap.getByUUID(uuid);
 }
 
