@@ -24,7 +24,7 @@
 #include "NimBLEAdvertisedDevice.h"
 #include "NimBLERemoteService.h"
 
-#include <map>
+#include <vector>
 #include <string>
 
 class NimBLERemoteService;
@@ -42,9 +42,10 @@ public:
     NimBLEAddress                              getPeerAddress();              // Get the address of the remote BLE Server
     uint8_t                                    getPeerType();;              // Get the type of the remote BLE Server
     int                                        getRssi();                     // Get the RSSI of the remote BLE Server
-    std::map<std::string, NimBLERemoteService*>*  getServices();                 // Get a map of the services offered by the remote BLE Server
-    NimBLERemoteService*                          getService(const char* uuid);  // Get a reference to a specified service offered by the remote BLE server.
-    NimBLERemoteService*                          getService(const NimBLEUUID &uuid);   // Get a reference to a specified service offered by the remote BLE server.
+
+    std::vector<NimBLERemoteService*>*         getServices();                 // Get a vector of the services offered by the remote BLE Server
+    NimBLERemoteService*                       getService(const char* uuid);  // Get a reference to a specified service offered by the remote BLE server.
+    NimBLERemoteService*                       getService(const NimBLEUUID &uuid);   // Get a reference to a specified service offered by the remote BLE server.
     std::string                                getValue(const NimBLEUUID &serviceUUID, const NimBLEUUID &characteristicUUID);   // Get the value of a given characteristic at a given service.
     bool                                       setValue(const NimBLEUUID &serviceUUID, const NimBLEUUID &characteristicUUID, const std::string &value);   // Set the value of a given characteristic at a given service.
     bool                                       isConnected();                 // Return true if we are connected.
@@ -73,8 +74,8 @@ private:
     bool                retrieveServices();  //Retrieve services from the server
 //    void                onHostReset();
 
-    NimBLEAddress    m_peerAddress = NimBLEAddress("\0\0\0\0\0\0");   // The BD address of the remote server.
-    uint8_t          m_peerType = BLE_ADDR_PUBLIC;               // The BD type of the remote server.
+    NimBLEAddress    m_peerAddress = NimBLEAddress("");   // The BD address of the remote server.
+    uint8_t          m_peerType = BLE_ADDR_PUBLIC;        // The BD type of the remote server.
     uint16_t         m_conn_id;
     bool             m_haveServices = false;    // Have we previously obtain the set of services from the remote server.
     bool             m_isConnected = false;     // Are we currently connected.
@@ -89,7 +90,7 @@ private:
     FreeRTOS::Semaphore     m_semaphoreSearchCmplEvt = FreeRTOS::Semaphore("SearchCmplEvt");
     FreeRTOS::Semaphore     m_semeaphoreSecEvt       = FreeRTOS::Semaphore("Security");
 
-    std::map<std::string, NimBLERemoteService*> m_servicesMap;
+    std::vector<NimBLERemoteService*> m_servicesVector;
 
 private:
     friend class NimBLEClientCallbacks;
