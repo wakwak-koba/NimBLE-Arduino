@@ -143,6 +143,7 @@ NimBLEScan::NimBLEScan() {
             advertisedDevice->parseAdvertisement(&fields);
             advertisedDevice->setScan(pScan);
             advertisedDevice->setAdvertisementResult(event->disc.data, event->disc.length_data);
+            advertisedDevice->m_timestamp = time(nullptr);
 
             if (pScan->m_pAdvertisedDeviceCallbacks) {
                 // If not active scanning report the result to the listener.
@@ -401,6 +402,24 @@ int NimBLEScanResults::getCount() {
  */
 NimBLEAdvertisedDevice NimBLEScanResults::getDevice(uint32_t i) {
     return *m_advertisedDevicesVector[i];
+}
+
+
+/**
+ * @brief Get iterator to the beginning of the vector of advertised device pointers.
+ * @return An iterator to the beginning of the vector of advertised device pointers.
+ */
+std::vector<NimBLEAdvertisedDevice*>::iterator NimBLEScanResults::begin() {
+    return m_advertisedDevicesVector.begin();
+}
+
+
+/**
+ * @brief Get iterator to the end of the vector of advertised device pointers.
+ * @return An iterator to the end of the vector of advertised device pointers.
+ */
+std::vector<NimBLEAdvertisedDevice*>::iterator NimBLEScanResults::end() {
+    return m_advertisedDevicesVector.end();
 }
 
 

@@ -40,7 +40,7 @@ static const char* LOG_TAG = "NimBLEDevice";
 /**
  * Singletons for the NimBLEDevice.
  */
-bool            initialized = false;
+static bool            initialized = false;
 #if defined(CONFIG_BT_NIMBLE_ROLE_OBSERVER)
 NimBLEScan*     NimBLEDevice::m_pScan = nullptr;
 #endif
@@ -152,21 +152,26 @@ void NimBLEDevice::stopAdvertising() {
         return false;
     }
 
+    int rc =0;
+
     if(pClient->m_isConnected) {
-        if (pClient->disconnect() != 0) {
+        rc = pClient->disconnect();
+        if (rc != 0 && rc != BLE_HS_EALREADY && rc != BLE_HS_ENOTCONN) {
             return false;
         }
+
         while(pClient->m_isConnected) {
-            vTaskDelay(1);
+            vTaskDelay(10);
         }
     }
 
     if(pClient->m_waitingToConnect) {
-        if(ble_gap_conn_cancel() != 0){
+        rc = ble_gap_conn_cancel();
+        if (rc != 0 && rc != BLE_HS_EALREADY) {
             return false;
         }
         while(pClient->m_waitingToConnect) {
-            vTaskDelay(1);
+            vTaskDelay(10);
         }
     }
 
