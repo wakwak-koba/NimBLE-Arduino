@@ -80,6 +80,7 @@ public:
     void              setCallbacks(NimBLECharacteristicCallbacks* pCallbacks);
     void              setValue(const uint8_t* data, size_t size);
     void              setValue(const std::string &value);
+    void              setValue(uint8_t data8);
     void              setValue(uint16_t& data16);
     void              setValue(uint32_t& data32);
     void              setValue(int& data32);
@@ -107,7 +108,7 @@ private:
     ~NimBLECharacteristic();
 
     NimBLEService*  getService();
-    uint8_t         getProperties();
+    uint16_t        getProperties();
     void            setSubscribe(struct ble_gap_event *event);
     static int      handleGapEvent(uint16_t conn_handle, uint16_t attr_handle,
                                    struct ble_gatt_access_ctxt *ctxt, void *arg);
