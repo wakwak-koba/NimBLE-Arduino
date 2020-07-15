@@ -75,6 +75,7 @@ public:
     NimBLEAdvertising();
     void addServiceUUID(const NimBLEUUID &serviceUUID);
     void addServiceUUID(const char* serviceUUID);
+    void removeServiceUUID(const NimBLEUUID &serviceUUID);
     void start();
     void stop();
     void setAppearance(uint16_t appearance);
@@ -84,8 +85,6 @@ public:
     void setAdvertisementData(NimBLEAdvertisementData& advertisementData);
     void setScanFilter(bool scanRequertWhitelistOnly, bool connectWhitelistOnly);
     void setScanResponseData(NimBLEAdvertisementData& advertisementData);
-    void setPrivateAddress(uint8_t type = BLE_ADDR_RANDOM);
-
     void setMinPreferred(uint16_t);
     void setMaxPreferred(uint16_t);
     void setScanResponse(bool);
