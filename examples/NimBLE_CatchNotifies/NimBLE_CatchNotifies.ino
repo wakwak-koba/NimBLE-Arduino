@@ -28,9 +28,9 @@ void setup() {
       Serial.print(advertisedDevice.toString().c_str());
       auto pClient = NimBLEDevice::createClient();
       if(pClient && pClient->connect(&advertisedDevice)) {
-        auto pServices = pClient->getServices();
+        auto pServices = pClient->getServices(true);
         for (auto pService : *pServices)  {
-          auto pCharacteristics = pService->getCharacteristics();
+          auto pCharacteristics = pService->getCharacteristics(true);
           for (auto pCharacteristic : *pCharacteristics)
             if(pCharacteristic->canNotify())
               if(pCharacteristic->registerForNotify(notifyCallback)) {
@@ -39,6 +39,7 @@ void setup() {
               }
         }
       }
+      Serial.println();
     }
   }
 }
