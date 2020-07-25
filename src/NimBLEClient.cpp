@@ -168,7 +168,7 @@ bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refr
 
     int rc = 0;
     m_peerAddress = address;
-	m_peerType = type;
+    m_peerType = type;
     
     ble_addr_t peerAddrt;
     memcpy(&peerAddrt.val, address.getNative(),6);
