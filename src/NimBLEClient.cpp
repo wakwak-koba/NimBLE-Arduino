@@ -168,11 +168,11 @@ bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refr
 
     int rc = 0;
     m_peerAddress = address;
-    m_peerType = type;
+    m_peerAddrType = type;
 
     ble_addr_t peerAddrt;
     memcpy(&peerAddrt.val, address.getNative(),6);
-    peerAddrt.type = m_peerType;
+    peerAddrt.type = m_peerAddrType;
 
     ble_task_data_t taskData = {this, xTaskGetCurrentTaskHandle(), 0, nullptr};
     m_pTaskData = &taskData;
@@ -192,7 +192,7 @@ bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refr
     if (rc != 0 && rc != BLE_HS_EDONE) {
         NIMBLE_LOGE(LOG_TAG, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s, rc=%d; %s",
-                    m_peerType, 
+                    m_peerAddrType, 
                     m_peerAddress.toString().c_str(),
                     rc, NimBLEUtils::returnCodeToString(rc));
         m_pTaskData = nullptr;
@@ -355,9 +355,9 @@ NimBLEAddress NimBLEClient::getPeerAddress() {
 /**
  * @brief Retrieve the type of the peer.
  */
-uint8_t NimBLEClient::getPeerType() {
-    return m_peerType;
-} // getPeerType
+uint8_t NimBLEClient::getPeerAddrType() {
+    return m_peerAddrType;
+} // getPeerAddrType
 
 
 /**
