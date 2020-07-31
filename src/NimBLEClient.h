@@ -38,12 +38,12 @@ class NimBLEAdvertisedDevice;
  */
 class NimBLEClient {
 public:
-    bool                                        connect(NimBLEAdvertisedDevice* device, bool refreshServices = true);
-    bool                                        connect(const NimBLEAddress &address, uint8_t type = BLE_ADDR_PUBLIC,
-                                                        bool refreshServices = true);
+    bool                                        connect(bool deleteAttibutes = true);
+    bool                                        connect(NimBLEAdvertisedDevice* device, bool deleteAttibutes = true);
+    bool                                        connect(const NimBLEAddress &address, bool deleteAttibutes = true);
     int                                         disconnect(uint8_t reason = BLE_ERR_REM_USER_CONN_TERM);
     NimBLEAddress                               getPeerAddress();
-    uint8_t                                     getPeerAddrType();
+    void                                        setPeerAddress(const NimBLEAddress &address);
     int                                         getRssi();
     std::vector<NimBLERemoteService*>*          getServices(bool refresh = false);
     std::vector<NimBLERemoteService*>::iterator begin();
@@ -71,7 +71,7 @@ public:
     void                                        discoverAttributes();
 
 private:
-    NimBLEClient();
+    NimBLEClient(const NimBLEAddress &peerAddress);
     ~NimBLEClient();
 
     friend class            NimBLEDevice;
@@ -84,8 +84,7 @@ private:
                                                 void *arg);
     bool                    retrieveServices(const NimBLEUUID *uuid_filter = nullptr);
 
-    NimBLEAddress           m_peerAddress = NimBLEAddress("");
-    uint8_t                 m_peerAddrType = BLE_ADDR_PUBLIC;
+    NimBLEAddress           m_peerAddress;
     uint16_t                m_conn_id;
     bool                    m_isConnected;
     bool                    m_waitingToConnect;

@@ -53,8 +53,7 @@ static NimBLEClientCallbacks defaultCallbacks;
  * @brief Constructor, private - only callable by NimBLEDevice::createClient
  * to ensure proper handling of the list of client objects.
  */
-NimBLEClient::NimBLEClient()
-{
+NimBLEClient::NimBLEClient(const NimBLEAddress &peerAddress) : m_peerAddress(peerAddress) {
     m_pClientCallbacks = &defaultCallbacks;
     m_conn_id          = BLE_HS_CONN_HANDLE_NONE;
     m_isConnected      = false;
@@ -128,16 +127,25 @@ size_t NimBLEClient::deleteService(const NimBLEUUID &uuid) {
 
 
 /**
- * @brief Connect to an advertising device.
- * @param [in] device The device to connect to.
- * @param [in] refreshServices If true this will delete any attribute objects this client may already\n
+ * @brief Connect to the BLE Server.
+ * @param [in] deleteAttibutes If true this will delete any attribute objects this client may already\n
  * have created and clears the vectors after successful connection.
  * @return True on success.
  */
-bool NimBLEClient::connect(NimBLEAdvertisedDevice* device, bool refreshServices) {
+bool NimBLEClient::connect(bool deleteAttibutes) {
+    return connect(m_peerAddress, deleteAttibutes);
+}
+
+/**
+ * @brief Connect to an advertising device.
+ * @param [in] device The device to connect to.
+ * @param [in] deleteAttibutes If true this will delete any attribute objects this client may already\n
+ * have created and clears the vectors after successful connection.
+ * @return True on success.
+ */
+bool NimBLEClient::connect(NimBLEAdvertisedDevice* device, bool deleteAttibutes) {
     NimBLEAddress address(device->getAddress());
-    uint8_t type = device->getAddressType();
-    return connect(address, type, refreshServices);
+    return connect(address, deleteAttibutes);
 }
 
 
@@ -145,11 +153,11 @@ bool NimBLEClient::connect(NimBLEAdvertisedDevice* device, bool refreshServices)
  * @brief Connect to the BLE Server.
  * @param [in] address The address of the server.
  * @param [in] type The address type of the server (Random/public/other)
- * @param [in] refreshServices If true this will delete any attribute objects this client may already\n
+ * @param [in] deleteAttibutes If true this will delete any attribute objects this client may already\n
  * have created and clears the vectors after successful connection.
  * @return True on success.
  */
-bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refreshServices) {
+bool NimBLEClient::connect(const NimBLEAddress &address, bool deleteAttibutes) {
     NIMBLE_LOGD(LOG_TAG, ">> connect(%s)", address.toString().c_str());
 
     if(!NimBLEDevice::m_synced) {
@@ -166,16 +174,21 @@ bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refr
         return false;
     }
 
-    int rc = 0;
-    m_peerAddress = address;
-    m_peerAddrType = type;
+    if(address == NimBLEAddress("")) {
+        NIMBLE_LOGE(LOG_TAG, "Invalid peer address;(NULL)");
+        return false;
+    } else if(m_peerAddress != address) {
+        m_peerAddress = address;
+    }
 
     ble_addr_t peerAddrt;
-    memcpy(&peerAddrt.val, address.getNative(),6);
-    peerAddrt.type = type;
+    memcpy(&peerAddrt.val, m_peerAddress.getNative(),6);
+    peerAddrt.type = m_peerAddress.getType();
 
     ble_task_data_t taskData = {this, xTaskGetCurrentTaskHandle(), 0, nullptr};
     m_pTaskData = &taskData;
+
+    int rc = 0;
 
     /* Try to connect the the advertiser.  Allow 30 seconds (30000 ms) for
      *  timeout (default value of m_connectTimeout).
@@ -190,10 +203,9 @@ bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refr
     }while(rc == BLE_HS_EBUSY);
 
     if (rc != 0 && rc != BLE_HS_EDONE) {
-        NIMBLE_LOGE(LOG_TAG, "Error: Failed to connect to device; addr_type=%d "
+        NIMBLE_LOGE(LOG_TAG, "Error: Failed to connect to device; "
                     "addr=%s, rc=%d; %s",
-                    m_peerAddrType, 
-                    m_peerAddress.toString().c_str(),
+                    std::string(m_peerAddress).c_str(),
                     rc, NimBLEUtils::returnCodeToString(rc));
         m_pTaskData = nullptr;
         m_waitingToConnect = false;
@@ -209,8 +221,7 @@ bool NimBLEClient::connect(const NimBLEAddress &address, uint8_t type, bool refr
         return false;
     }
 
-    if(refreshServices) {
-        NIMBLE_LOGD(LOG_TAG, "Refreshing Services for: (%s)", address.toString().c_str());
+    if(deleteAttibutes) {
         deleteServices();
     }
 
@@ -353,11 +364,19 @@ NimBLEAddress NimBLEClient::getPeerAddress() {
 
 
 /**
- * @brief Retrieve the type of the peer.
+ * @brief Set the peer address.
+ * @param [in] address The address of the peer that this client is
+ * connected or should connect to.
  */
-uint8_t NimBLEClient::getPeerAddrType() {
-    return m_peerAddrType;
-} // getPeerAddrType
+void NimBLEClient::setPeerAddress(const NimBLEAddress &address) {
+    if(isConnected()) {
+        NIMBLE_LOGE(LOG_TAG, "Cannot set peer address while connected");
+        return;
+    }
+
+    m_peerAddress = address;
+    NIMBLE_LOGD(LOG_TAG, "Peer address set: %s", std::string(m_peerAddress).c_str());
+} // setPeerAddress
 
 
 /**
