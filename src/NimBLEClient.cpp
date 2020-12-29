@@ -454,6 +454,16 @@ NimBLERemoteService* NimBLEClient::getService(const NimBLEUUID &uuid) {
         if(m_servicesVector.size() > prev_size) {
             return m_servicesVector.back();
         }
+
+        // If the request was successful but 16/32 bit service not found
+        // try again with the 128 bit uuid.
+        if(uuid.bitSize() == BLE_UUID_TYPE_16 ||
+           uuid.bitSize() == BLE_UUID_TYPE_32)
+        {
+            NimBLEUUID uuid128(uuid);
+            uuid128.to128();
+            return getService(uuid128);
+        }
     }
 
     NIMBLE_LOGD(LOG_TAG, "<< getService: not found");
@@ -621,7 +631,7 @@ std::string NimBLEClient::getValue(const NimBLEUUID &serviceUUID, const NimBLEUU
  * @returns true if successful otherwise false
  */
 bool NimBLEClient::setValue(const NimBLEUUID &serviceUUID, const NimBLEUUID &characteristicUUID,
-                            const std::string &value)
+                            const std::string &value, bool response)
 {
     NIMBLE_LOGD(LOG_TAG, ">> setValue: serviceUUID: %s, characteristicUUID: %s",
                          serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
@@ -632,7 +642,7 @@ bool NimBLEClient::setValue(const NimBLEUUID &serviceUUID, const NimBLEUUID &cha
     if(pService != nullptr) {
         NimBLERemoteCharacteristic* pChar = pService->getCharacteristic(characteristicUUID);
         if(pChar != nullptr) {
-            ret = pChar->writeValue(value);
+            ret = pChar->writeValue(value, response);
         }
     }
 
@@ -789,9 +799,10 @@ uint16_t NimBLEClient::getMTU() {
                 if(characteristic != cVector->cend()) {
                     NIMBLE_LOGD(LOG_TAG, "Got Notification for characteristic %s", (*characteristic)->toString().c_str());
 
+                    time_t t = time(nullptr);
                     portENTER_CRITICAL(&(*characteristic)->m_valMux);
                     (*characteristic)->m_value = std::string((char *)event->notify_rx.om->om_data, event->notify_rx.om->om_len);
-                    (*characteristic)->m_timestamp = time(nullptr);
+                    (*characteristic)->m_timestamp = t;
                     portEXIT_CRITICAL(&(*characteristic)->m_valMux);
 
                     if ((*characteristic)->m_notifyCallback != nullptr) {
