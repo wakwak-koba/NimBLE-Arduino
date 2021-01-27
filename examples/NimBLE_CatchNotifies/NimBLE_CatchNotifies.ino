@@ -29,6 +29,7 @@ void setup() {
     if (advertisedDevice.haveServiceUUID())  {
       Serial.print("Found Device ");
       Serial.print(advertisedDevice.toString().c_str());
+      Serial.println();
       auto pClient = NimBLEDevice::createClient();
       if(pClient && pClient->connect(&advertisedDevice)) {
         auto pServices = pClient->getServices(true);

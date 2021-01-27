@@ -89,7 +89,7 @@
 /*  Uncomment to see NimBLE host return codes as text debug log messages.
  *  Uses approx. 7kB of flash memory.
  */
-// #define CONFIG_NIMBLE_CPP_ENABLE_RETURN_CODE_TEXT
+#define CONFIG_NIMBLE_CPP_ENABLE_RETURN_CODE_TEXT
 
 /*  Uncomment to see GAP event codes as text in debug log messages.
  *  Uses approx. 1kB of flash memory.
