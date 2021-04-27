@@ -6,9 +6,14 @@
 
 #include <NimBLEDevice.h>
 
+void printCharacteristic(BLERemoteCharacteristic* pRemoteCharacteristic) {
+  Serial.printf("%s handle:%02d service:%s characteristic:%s ", pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress().toString().c_str(), pRemoteCharacteristic->getHandle(), pRemoteCharacteristic->getRemoteService()->getUUID().toString().c_str(), pRemoteCharacteristic->getUUID().toString().c_str());
+}
+
 void subscribeCallback(BLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify)  {
-  Serial.printf(isNotify ? "notify" : "indicate");
-  Serial.printf("Callback: %s %s %s handle: %d value:", pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress().toString().c_str(), pRemoteCharacteristic->getRemoteService()->getUUID().toString().c_str(), pRemoteCharacteristic->getUUID().toString().c_str(), pRemoteCharacteristic->getHandle());
+  printCharacteristic(pRemoteCharacteristic);
+  Serial.print(isNotify ? "notify" : "indicate");
+  Serial.printf("Callback:(%d)", length);
   for (int i=0; i<length; i++)
     Serial.printf(" %02x", pData[i]);
   Serial.println();
@@ -36,18 +41,29 @@ void setup() {
         for (auto pService : *pServices)  {
           auto pCharacteristics = pService->getCharacteristics(true);
           for (auto pCharacteristic : *pCharacteristics) {
-            if(pCharacteristic->canNotify() && pCharacteristic->subscribe(true, subscribeCallback)) {
-              Serial.printf("registerForNotify: %s %s %s handle:%d", pClient->getPeerAddress().toString().c_str(), pService->getUUID().toString().c_str(), pCharacteristic->getUUID().toString().c_str(), pCharacteristic->getHandle());
+            if(pCharacteristic->canRead()) {
+              std::string rd = pCharacteristic->readValue();
+              if(rd.size() > 0) {
+                printCharacteristic(pCharacteristic);
+                Serial.printf("readValue:(%d)", rd.size());
+                for(int i = 0; i < rd.size(); i++)
+                  Serial.printf(" %02x", rd[i]);
+                Serial.println();
+              }
+            }
+            if(pCharacteristic->canNotify()) {
+              printCharacteristic(pCharacteristic);
+              Serial.printf("registerForNotify:%s", pCharacteristic->subscribe(true, subscribeCallback) ? "true" : "false");
               Serial.println();
             }
-            if(pCharacteristic->canIndicate() && pCharacteristic->subscribe(false, subscribeCallback)) {
-              Serial.printf("registerForIndicate: %s %s %s handle:%d", pClient->getPeerAddress().toString().c_str(), pService->getUUID().toString().c_str(), pCharacteristic->getUUID().toString().c_str(), pCharacteristic->getHandle());
+            if(pCharacteristic->canIndicate()) {
+              printCharacteristic(pCharacteristic);
+              Serial.printf("registerForIndicate:%s", pCharacteristic->subscribe(false, subscribeCallback) ? "true" : "false");
               Serial.println();
             }
-          }    
+          }
         }
       }
-      Serial.println();
     }
   }
   
