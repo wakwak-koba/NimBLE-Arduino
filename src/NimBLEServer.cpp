@@ -254,6 +254,63 @@ size_t NimBLEServer::getConnectedCount() {
 
 
 /**
+ * @brief Get the vector of the connected client ID's.
+ */
+std::vector<uint16_t> NimBLEServer::getPeerDevices() {
+    return m_connectedPeersVec;
+} // getPeerDevices
+
+
+/**
+ * @brief Get the connection information of a connected peer by vector index.
+ * @param [in] index The vector index of the peer.
+ */
+NimBLEConnInfo NimBLEServer::getPeerInfo(size_t index) {
+    if (index >= m_connectedPeersVec.size()) {
+        NIMBLE_LOGE(LOG_TAG, "No peer at index %u", index);
+        return NimBLEConnInfo();
+    }
+
+    return getPeerIDInfo(m_connectedPeersVec[index]);
+} // getPeerInfo
+
+
+/**
+ * @brief Get the connection information of a connected peer by address.
+ * @param [in] address The address of the peer.
+ */
+NimBLEConnInfo NimBLEServer::getPeerInfo(const NimBLEAddress& address) {
+    ble_addr_t peerAddr;
+    memcpy(&peerAddr.val, address.getNative(),6);
+    peerAddr.type = address.getType();
+
+    NimBLEConnInfo peerInfo;
+    int rc = ble_gap_conn_find_by_addr(&peerAddr, &peerInfo.m_desc);
+    if (rc != 0) {
+        NIMBLE_LOGE(LOG_TAG, "Peer info not found");
+    }
+
+    return peerInfo;
+} // getPeerInfo
+
+
+/**
+ * @brief Get the connection information of a connected peer by connection ID.
+ * @param [in] id The connection id of the peer.
+ */
+NimBLEConnInfo NimBLEServer::getPeerIDInfo(uint16_t id) {
+    NimBLEConnInfo peerInfo;
+
+    int rc = ble_gap_conn_find(id, &peerInfo.m_desc);
+    if (rc != 0) {
+        NIMBLE_LOGE(LOG_TAG, "Peer info not found");
+    }
+
+    return peerInfo;
+} // getPeerIDInfo
+
+
+/**
  * @brief Handle a GATT Server Event.
  *
  * @param [in] event
@@ -280,7 +337,9 @@ size_t NimBLEServer::getConnectedCount() {
                 server->m_connectedPeersVec.push_back(event->connect.conn_handle);
 
                 rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-                assert(rc == 0);
+                if (rc != 0) {
+                    return 0;
+                }
 
                 server->m_pServerCallbacks->onConnect(server);
                 server->m_pServerCallbacks->onConnect(server, &desc);
@@ -335,7 +394,9 @@ size_t NimBLEServer::getConnectedCount() {
                        (it->getProperties() & BLE_GATT_CHR_F_READ_ENC))
                     {
                         rc = ble_gap_conn_find(event->subscribe.conn_handle, &desc);
-                        assert(rc == 0);
+                        if (rc != 0) {
+                            break;
+                        }
 
                         if(!desc.sec_state.encrypted) {
                             NimBLEDevice::startSecurity(event->subscribe.conn_handle);
@@ -392,7 +453,10 @@ size_t NimBLEServer::getConnectedCount() {
 
             /* Delete the old bond. */
             rc = ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc);
-            assert(rc == 0);
+            if (rc != 0){
+                return BLE_GAP_REPEAT_PAIRING_IGNORE;
+            }
+
             ble_store_util_delete_peer(&desc.peer_id_addr);
 
             /* Return BLE_GAP_REPEAT_PAIRING_RETRY to indicate that the host should
