@@ -94,9 +94,20 @@ NimBLEDescriptor* NimBLECharacteristic::createDescriptor(const NimBLEUUID &uuid,
         pDescriptor = new NimBLEDescriptor(uuid, properties, max_len, this);
     }
 
-    m_dscVec.push_back(pDescriptor);
+    addDescriptor(pDescriptor);
+
     return pDescriptor;
-} // createCharacteristic
+} // createDescriptor
+
+
+/**
+ * @brief Add a descriptor to the characteristic.
+ * @param [in] A pointer to the descriptor to add.
+ */
+void NimBLECharacteristic::addDescriptor(NimBLEDescriptor *pDescriptor) {
+    pDescriptor->setCharacteristic(this);
+    m_dscVec.push_back(pDescriptor);
+}
 
 
 /**
@@ -162,6 +173,11 @@ uint16_t NimBLECharacteristic::getProperties() {
 NimBLEService* NimBLECharacteristic::getService() {
     return m_pService;
 } // getService
+
+
+void NimBLECharacteristic::setService(NimBLEService *pService) {
+    m_pService = pService;
+}
 
 
 /**
@@ -307,7 +323,6 @@ void NimBLECharacteristic::setSubscribe(struct ble_gap_event *event) {
        NimBLEDevice::getServer()->clearIndicateWait(event->subscribe.conn_handle);
     }
 
-    m_pCallbacks->onSubscribe(this, &desc, subVal);
 
     auto it = m_subscribedVec.begin();
     for(;it != m_subscribedVec.end(); ++it) {
@@ -319,14 +334,14 @@ void NimBLECharacteristic::setSubscribe(struct ble_gap_event *event) {
     if(subVal > 0) {
         if(it == m_subscribedVec.end()) {
             m_subscribedVec.push_back({event->subscribe.conn_handle, subVal});
-            return;
+        } else {
+            (*it).second = subVal;
         }
-
-        (*it).second = subVal;
-
     } else if(it != m_subscribedVec.end()) {
         m_subscribedVec.erase(it);
     }
+
+    m_pCallbacks->onSubscribe(this, &desc, subVal);
 }
 
 
@@ -443,6 +458,13 @@ void NimBLECharacteristic::setCallbacks(NimBLECharacteristicCallbacks* pCallback
         m_pCallbacks = &defaultCallback;
     }
 } // setCallbacks
+
+/**
+ * @brief Get the callback handlers for this characteristic.
+ */
+NimBLECharacteristicCallbacks* NimBLECharacteristic::getCallbacks() {
+    return m_pCallbacks;
+} //getCallbacks
 
 
 /**
