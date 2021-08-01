@@ -91,12 +91,7 @@ NimBLEService* NimBLEServer::createService(const NimBLEUUID &uuid, uint32_t numH
 
     NimBLEService* pService = new NimBLEService(uuid, numHandles, this);
     m_svcVec.push_back(pService); // Save a reference to this service being on this server.
-
-    if(m_gattsStarted) {
-        ble_svc_gatt_changed(0x0001, 0xffff);
-        m_svcChanged = true;
-        resetGATT();
-    }
+    serviceChanged();
 
     NIMBLE_LOGD(LOG_TAG, "<< createService");
     return pService;
@@ -155,6 +150,18 @@ NimBLEService *NimBLEServer::getServiceByHandle(uint16_t handle) {
 NimBLEAdvertising* NimBLEServer::getAdvertising() {
     return NimBLEDevice::getAdvertising();
 } // getAdvertising
+
+
+/**
+ * @brief Sends a service changed notification and resets the GATT server.
+ */
+void NimBLEServer::serviceChanged() {
+    if(m_gattsStarted) {
+        m_svcChanged = true;
+        ble_svc_gatt_changed(0x0001, 0xffff);
+        resetGATT();
+    }
+}
 
 
 /**
@@ -416,6 +423,12 @@ NimBLEConnInfo NimBLEServer::getPeerIDInfo(uint16_t id) {
             NIMBLE_LOGI(LOG_TAG, "mtu update event; conn_handle=%d mtu=%d",
                         event->mtu.conn_handle,
                         event->mtu.value);
+            rc = ble_gap_conn_find(event->mtu.conn_handle, &desc);
+            if (rc != 0) {
+                return 0;
+            }
+
+            server->m_pServerCallbacks->onMTUChange(event->mtu.value, &desc);
             return 0;
         } // BLE_GAP_EVENT_MTU
 
@@ -624,7 +637,7 @@ void NimBLEServer::removeService(NimBLEService* service, bool deleteSvc) {
     if(service->m_removed > 0) {
         if(deleteSvc) {
             for(auto it = m_svcVec.begin(); it != m_svcVec.end(); ++it) {
-                if ((*it)->getUUID() == service->getUUID()) {
+                if ((*it) == service) {
                     delete *it;
                     m_svcVec.erase(it);
                     break;
@@ -640,11 +653,8 @@ void NimBLEServer::removeService(NimBLEService* service, bool deleteSvc) {
         return;
     }
 
-    service->m_removed = deleteSvc ? 2 : 1;
-    m_svcChanged = true;
-
-    ble_svc_gatt_changed(0x0001, 0xffff);
-    resetGATT();
+    service->m_removed = deleteSvc ? NIMBLE_ATT_REMOVE_DELETE : NIMBLE_ATT_REMOVE_HIDE;
+    serviceChanged();
     NimBLEDevice::getAdvertising()->removeServiceUUID(service->getUUID());
 }
 
@@ -671,10 +681,7 @@ void NimBLEServer::addService(NimBLEService* service) {
     }
 
     service->m_removed = 0;
-    m_svcChanged = true;
-
-    ble_svc_gatt_changed(0x0001, 0xffff);
-    resetGATT();
+    serviceChanged();
 }
 
 
@@ -693,7 +700,7 @@ void NimBLEServer::resetGATT() {
 
     for(auto it = m_svcVec.begin(); it != m_svcVec.end(); ) {
         if ((*it)->m_removed > 0) {
-            if ((*it)->m_removed == 2) {
+            if ((*it)->m_removed == NIMBLE_ATT_REMOVE_DELETE) {
                 delete *it;
                 it = m_svcVec.erase(it);
             } else {
@@ -808,6 +815,10 @@ void NimBLEServerCallbacks::onDisconnect(NimBLEServer* pServer) {
 void NimBLEServerCallbacks::onDisconnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
     NIMBLE_LOGD("NimBLEServerCallbacks", "onDisconnect(): Default");
 } // onDisconnect
+
+void NimBLEServerCallbacks::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
+    NIMBLE_LOGD("NimBLEServerCallbacks", "onMTUChange(): Default");
+} // onMTUChange
 
 uint32_t NimBLEServerCallbacks::onPassKeyRequest(){
     NIMBLE_LOGD("NimBLEServerCallbacks", "onPassKeyRequest: default: 123456");
