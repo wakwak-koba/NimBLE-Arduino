@@ -41,8 +41,7 @@ class NimBLEServer {
 public:
     size_t                 getConnectedCount();
     NimBLEService*         createService(const char* uuid);
-    NimBLEService*         createService(const NimBLEUUID &uuid, uint32_t numHandles=15,
-                                         uint8_t inst_id=0);
+    NimBLEService*         createService(const NimBLEUUID &uuid);
     void                   removeService(NimBLEService* service, bool deleteSvc = false);
     void                   addService(NimBLEService* service);
     NimBLEAdvertising*     getAdvertising();
@@ -59,6 +58,7 @@ public:
     void                   updateConnParams(uint16_t conn_handle,
                                             uint16_t minInterval, uint16_t maxInterval,
                                             uint16_t latency, uint16_t timeout);
+    void                   setDataLen(uint16_t conn_handle, uint16_t tx_octets);
     uint16_t               getPeerMTU(uint16_t conn_id);
     std::vector<uint16_t>  getPeerDevices();
     NimBLEConnInfo         getPeerInfo(size_t index);

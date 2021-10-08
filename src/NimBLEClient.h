@@ -68,8 +68,10 @@ public:
                                                                     uint16_t scanInterval=16, uint16_t scanWindow=16);
     void                                        updateConnParams(uint16_t minInterval, uint16_t maxInterval,
                                                                  uint16_t latency, uint16_t timeout);
+    void                                        setDataLen(uint16_t tx_octets);
     void                                        discoverAttributes();
     NimBLEConnInfo                              getConnInfo();
+    int                                         getLastError();
 
 private:
     NimBLEClient(const NimBLEAddress &peerAddress);
@@ -87,6 +89,7 @@ private:
     bool                    retrieveServices(const NimBLEUUID *uuid_filter = nullptr);
 
     NimBLEAddress           m_peerAddress;
+    int                     m_lastErr;
     uint16_t                m_conn_id;
     bool                    m_connEstablished;
     bool                    m_deleteCallbacks;
