@@ -20,6 +20,8 @@
 #include "NimBLEDevice.h"
 #include "NimBLELog.h"
 
+#include <climits>
+
 static const char* LOG_TAG = "NimBLERemoteService";
 
 /**
@@ -107,7 +109,7 @@ NimBLERemoteCharacteristic* NimBLERemoteService::getCharacteristic(const NimBLEU
             return m_characteristicVector.back();
         }
 
-        // If the request was successful but 16/32 bit characteristic not found
+        // If the request was successful but 16/32 bit uuid not found
         // try again with the 128 bit uuid.
         if(uuid.bitSize() == BLE_UUID_TYPE_16 ||
            uuid.bitSize() == BLE_UUID_TYPE_32)
@@ -115,6 +117,15 @@ NimBLERemoteCharacteristic* NimBLERemoteService::getCharacteristic(const NimBLEU
             NimBLEUUID uuid128(uuid);
             uuid128.to128();
             return getCharacteristic(uuid128);
+        } else {
+            // If the request was successful but the 128 bit uuid not found
+            // try again with the 16 bit uuid.
+            NimBLEUUID uuid16(uuid);
+            uuid16.to16();
+            // if the uuid was 128 bit but not of the BLE base type this check will fail
+            if (uuid16.bitSize() == BLE_UUID_TYPE_16) {
+                return getCharacteristic(uuid16);
+            }
         }
     }
 
@@ -196,7 +207,8 @@ bool NimBLERemoteService::retrieveCharacteristics(const NimBLEUUID *uuid_filter)
     NIMBLE_LOGD(LOG_TAG, ">> retrieveCharacteristics() for service: %s", getUUID().toString().c_str());
 
     int rc = 0;
-    ble_task_data_t taskData = {this, xTaskGetCurrentTaskHandle(), 0, nullptr};
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    ble_task_data_t taskData = {this, cur_task, 0, nullptr};
 
     if(uuid_filter == nullptr) {
         rc = ble_gattc_disc_all_chrs(m_pClient->getConnId(),
@@ -218,6 +230,10 @@ bool NimBLERemoteService::retrieveCharacteristics(const NimBLEUUID *uuid_filter)
         return false;
     }
 
+#ifdef ulTaskNotifyValueClear
+    // Clear the task notification value to ensure we block
+    ulTaskNotifyValueClear(cur_task, ULONG_MAX);
+#endif
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     if(taskData.rc == 0){

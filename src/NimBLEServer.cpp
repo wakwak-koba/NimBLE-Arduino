@@ -75,9 +75,6 @@ NimBLEService* NimBLEServer::createService(const char* uuid) {
 /**
  * @brief Create a %BLE Service.
  * @param [in] uuid The UUID of the new service.
- * @param [in] numHandles The maximum number of handles associated with this service.
- * @param [in] inst_id if we have multiple services with the same UUID we need
- *             to provide inst_id value different for each service.
  * @return A reference to the new service object.
  */
 NimBLEService* NimBLEServer::createService(const NimBLEUUID &uuid) {
@@ -181,7 +178,7 @@ void NimBLEServer::start() {
         abort();
     }
 
-#if CONFIG_LOG_DEFAULT_LEVEL > 3 || (ARDUINO_ARCH_ESP32 && CORE_DEBUG_LEVEL >= 4)
+#if CONFIG_NIMBLE_CPP_LOG_LEVEL >= 4
     ble_gatts_show_local();
 #endif
 /*** Future use ***
@@ -537,7 +534,7 @@ NimBLEConnInfo NimBLEServer::getPeerIDInfo(uint16_t id) {
                 NIMBLE_LOGD(LOG_TAG, "BLE_SM_IOACT_DISP; ble_sm_inject_io result: %d", rc);
 
             } else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
-                NIMBLE_LOGD(LOG_TAG, "Passkey on device's display: %d", event->passkey.params.numcmp);
+                NIMBLE_LOGD(LOG_TAG, "Passkey on device's display: %" PRIu32, event->passkey.params.numcmp);
                 pkey.action = event->passkey.params.action;
                 // Compatibility only - Do not use, should be removed the in future
                 if(NimBLEDevice::m_securityCallbacks != nullptr) {
@@ -785,7 +782,8 @@ void NimBLEServer::updateConnParams(uint16_t conn_handle,
  * @param [in] tx_octets The preferred number of payload octets to use (Range 0x001B-0x00FB).
  */
 void NimBLEServer::setDataLen(uint16_t conn_handle, uint16_t tx_octets) {
-#ifdef CONFIG_NIMBLE_CPP_IDF // not yet available in IDF, Sept 9 2021
+#if defined(CONFIG_NIMBLE_CPP_IDF) && defined(ESP_IDF_VERSION) && \
+           ESP_IDF_VERSION_MAJOR >= 4 && ESP_IDF_VERSION_MINOR >= 3 && ESP_IDF_VERSION_PATCH >= 2
     return;
 #else
     uint16_t tx_time = (tx_octets + 14) * 8;
