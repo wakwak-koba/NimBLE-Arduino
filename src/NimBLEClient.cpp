@@ -94,6 +94,8 @@ NimBLEClient::~NimBLEClient() {
         delete m_pClientCallbacks;
     }
 
+    ble_npl_callout_deinit(&m_dcTimer);
+
 } // ~NimBLEClient
 
 
@@ -464,8 +466,8 @@ void NimBLEClient::updateConnParams(uint16_t minInterval, uint16_t maxInterval,
  * @param [in] tx_octets The preferred number of payload octets to use (Range 0x001B-0x00FB).
  */
 void NimBLEClient::setDataLen(uint16_t tx_octets) {
-#if defined(CONFIG_NIMBLE_CPP_IDF) && defined(ESP_IDF_VERSION) && \
-           ESP_IDF_VERSION_MAJOR >= 4 && ESP_IDF_VERSION_MINOR >= 3 && ESP_IDF_VERSION_PATCH >= 2
+#if defined(CONFIG_NIMBLE_CPP_IDF) && !defined(ESP_IDF_VERSION) || \
+  (ESP_IDF_VERSION_MAJOR * 100 + ESP_IDF_VERSION_MINOR * 10 + ESP_IDF_VERSION_PATCH) < 432
     return;
 #else
     uint16_t tx_time = (tx_octets + 14) * 8;
@@ -618,7 +620,11 @@ NimBLERemoteService* NimBLEClient::getService(const NimBLEUUID &uuid) {
         {
             NimBLEUUID uuid128(uuid);
             uuid128.to128();
-            return getService(uuid128);
+            if(retrieveServices(&uuid128)) {
+                if(m_servicesVector.size() > prev_size) {
+                    return m_servicesVector.back();
+                }
+            }
         } else {
             // If the request was successful but the 128 bit uuid not found
             // try again with the 16 bit uuid.
@@ -626,7 +632,11 @@ NimBLERemoteService* NimBLEClient::getService(const NimBLEUUID &uuid) {
             uuid16.to16();
             // if the uuid was 128 bit but not of the BLE base type this check will fail
             if (uuid16.bitSize() == BLE_UUID_TYPE_16) {
-                return getService(uuid16);
+                if(retrieveServices(&uuid16)) {
+                    if(m_servicesVector.size() > prev_size) {
+                        return m_servicesVector.back();
+                    }
+                }
             }
         }
     }
