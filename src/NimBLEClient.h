@@ -70,9 +70,12 @@ public:
     void                                        updateConnParams(uint16_t minInterval, uint16_t maxInterval,
                                                                  uint16_t latency, uint16_t timeout);
     void                                        setDataLen(uint16_t tx_octets);
-    void                                        discoverAttributes();
+    bool                                        discoverAttributes();
     NimBLEConnInfo                              getConnInfo();
     int                                         getLastError();
+#if CONFIG_BT_NIMBLE_EXT_ADV
+    void                                        setConnectPhy(uint8_t mask);
+#endif
 
 private:
     NimBLEClient(const NimBLEAddress &peerAddress);
@@ -98,6 +101,9 @@ private:
     NimBLEClientCallbacks*  m_pClientCallbacks;
     ble_task_data_t*        m_pTaskData;
     ble_npl_callout         m_dcTimer;
+#if CONFIG_BT_NIMBLE_EXT_ADV
+    uint8_t                 m_phyMask;
+#endif
 
     std::vector<NimBLERemoteService*> m_servicesVector;
 
