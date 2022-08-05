@@ -126,8 +126,8 @@ void NimBLECharacteristic::addDescriptor(NimBLEDescriptor *pDescriptor) {
 
 
 /**
- * @brief Remove a descriptor from the characterisitc.
- * @param[in] pDescriptor A pointer to the descriptor instance to remove from the characterisitc.
+ * @brief Remove a descriptor from the characteristic.
+ * @param[in] pDescriptor A pointer to the descriptor instance to remove from the characteristic.
  * @param[in] deleteDsc If true it will delete the descriptor instance and free it's resources.
  */
 void NimBLECharacteristic::removeDescriptor(NimBLEDescriptor *pDescriptor, bool deleteDsc) {
@@ -442,7 +442,7 @@ void NimBLECharacteristic::notify(const uint8_t* value, size_t length, bool is_n
        !(m_properties & NIMBLE_PROPERTY::INDICATE))
     {
         NIMBLE_LOGE(LOG_TAG,
-                    "<< notify-Error; Notify/indicate not enabled for characterisitc: %s",
+                    "<< notify-Error; Notify/indicate not enabled for characteristic: %s",
                     std::string(getUUID()).c_str());
     }
 
@@ -633,10 +633,11 @@ void NimBLECharacteristicCallbacks::onNotify(NimBLECharacteristic* pCharacterist
 /**
  * @brief Callback function to support a Notify/Indicate Status report.
  * @param [in] pCharacteristic The characteristic that is the source of the event.
- * @param [in] s Status of the notification/indication.
- * @param [in] code Additional return code from the NimBLE stack.
+ * @param [in] code Status return code from the NimBLE stack.
+ * @details The status code for success is 0 for notifications and BLE_HS_EDONE for indications,
+ * any other value is an error.
  */
-void NimBLECharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, Status s, int code) {
+void NimBLECharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
     NIMBLE_LOGD("NimBLECharacteristicCallbacks", "onStatus: default");
 } // onStatus
 

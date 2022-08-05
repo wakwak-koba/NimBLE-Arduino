@@ -164,7 +164,7 @@ NimBLEScan::~NimBLEScan() {
             NIMBLE_LOGD(LOG_TAG, "discovery complete; reason=%d",
                         event->disc_complete.reason);
 
-            // If a device advertised with scan reponse available and it was not received
+            // If a device advertised with scan response available and it was not received
             // the callback would not have been invoked, so do it here.
             if(pScan->m_pAdvertisedDeviceCallbacks) {
                 for(auto &it : pScan->m_scanResults.m_advertisedDevicesVector) {
@@ -211,7 +211,7 @@ void NimBLEScan::setActiveScan(bool active) {
  * from devices it has not already seen.
  * @param [in] enabled If true, scanned devices will only be reported once.
  * @details The controller has a limited buffer and will start reporting
- * dupicate devices once the limit is reached.
+ * duplicate devices once the limit is reached.
  */
 void NimBLEScan::setDuplicateFilter(bool enabled) {
     m_scan_params.filter_duplicates = enabled;
@@ -236,7 +236,7 @@ void NimBLEScan::setLimitedOnly(bool enabled) {
  *      directed, connectable advertising packets not sent to the scanner.
  * * BLE_HCI_SCAN_FILT_USE_WL            (1)
  *      Scanner processes advertisements from white list only. A connectable,\n
- *      directed advertisment is ignored unless it contains scanners address.
+ *      directed advertisement is ignored unless it contains scanners address.
  * * BLE_HCI_SCAN_FILT_NO_WL_INITA       (2)
  *      Scanner process all advertising packets (white list not used). A\n
  *      connectable, directed advertisement shall not be ignored if the InitA
@@ -302,7 +302,7 @@ bool NimBLEScan::isScanning() {
 
 /**
  * @brief Start scanning.
- * @param [in] duration The duration in seconds for which to scan.
+ * @param [in] duration The duration in milliseconds for which to scan.
  * @param [in] scanCompleteCB A function to be called when scanning has completed.
  * @param [in] is_continue Set to true to save previous scan results, false to clear them.
  * @return True if scan started or false if there was an error.
@@ -318,10 +318,6 @@ bool NimBLEScan::start(uint32_t duration, void (*scanCompleteCB)(NimBLEScanResul
     // If 0 duration specified then we assume a continuous scan is desired.
     if(duration == 0){
         duration = BLE_HS_FOREVER;
-    }
-    else{
-        // convert duration to milliseconds
-        duration = duration * 1000;
     }
 
     // Set the flag to ignore the results while we are deleting the vector
