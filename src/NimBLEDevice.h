@@ -62,7 +62,7 @@
 #define BLEAddress                      NimBLEAddress
 #define BLEUtils                        NimBLEUtils
 #define BLEClientCallbacks              NimBLEClientCallbacks
-#define BLEAdvertisedDeviceCallbacks    NimBLEAdvertisedDeviceCallbacks
+#define BLEAdvertisedDeviceCallbacks    NimBLEScanCallbacks
 #define BLEScanResults                  NimBLEScanResults
 #define BLEServer                       NimBLEServer
 #define BLEService                      NimBLEService
@@ -78,6 +78,7 @@
 #define BLEBeacon                       NimBLEBeacon
 #define BLEEddystoneTLM                 NimBLEEddystoneTLM
 #define BLEEddystoneURL                 NimBLEEddystoneURL
+#define BLEConnInfo                     NimBLEConnInfo
 
 #ifdef CONFIG_BT_NIMBLE_MAX_CONNECTIONS
 #define NIMBLE_MAX_CONNECTIONS          CONFIG_BT_NIMBLE_MAX_CONNECTIONS
@@ -149,7 +150,8 @@ public:
                                                   int max_events = 0);
     static bool                  stopAdvertising(uint8_t inst_id);
     static bool                  stopAdvertising();
-#  else
+#  endif
+#  if !CONFIG_BT_NIMBLE_EXT_ADV || defined(_DOXYGEN_)
     static NimBLEAdvertising*    getAdvertising();
     static bool                  startAdvertising(uint32_t duration = 0);
     static bool                  stopAdvertising();
