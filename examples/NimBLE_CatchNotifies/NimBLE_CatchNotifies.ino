@@ -27,7 +27,7 @@ void setup() {
   pBLEScan->setActiveScan(true);
 
   Serial.println("wait 10 secs..");
-  auto pScanResults = pBLEScan->start(10);
+  auto pScanResults = pBLEScan->getResults(10000);
 
   for (int i = 0; i < pScanResults.getCount(); i++) {
     auto advertisedDevice = pScanResults.getDevice(i);

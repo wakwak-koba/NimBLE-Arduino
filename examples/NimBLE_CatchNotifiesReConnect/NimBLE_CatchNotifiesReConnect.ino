@@ -21,6 +21,7 @@ void subscribeCallback(BLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* 
 
 void careClient(NimBLEClient* pClient) {
   if(!pClient->isConnected() && pClient->connect()) {
+    Serial.println("connected");
     auto pServices = pClient->getServices(true);
     for (auto pService : *pServices)  {
       auto pCharacteristics = pService->getCharacteristics(true);
@@ -58,7 +59,7 @@ void setup() {
   pBLEScan->setActiveScan(true);
 
   Serial.println("wait 10 secs..");
-  auto pScanResults = pBLEScan->start(10);
+  auto pScanResults = pBLEScan->getResults(10000);
 
   for (int i = 0; i < pScanResults.getCount(); i++) {
     auto advertisedDevice = pScanResults.getDevice(i);
@@ -66,7 +67,7 @@ void setup() {
       auto pClient = NimBLEDevice::createClient(advertisedDevice.getAddress());
       if(pClient)
       {
-        pClient->setConnectTimeout(1);    // TODO: Needs adjustment
+        pClient->setConnectTimeout(100);    // TODO: Needs adjustment
         Serial.print("Found Device ");
         Serial.println(advertisedDevice.toString().c_str());
       }        
