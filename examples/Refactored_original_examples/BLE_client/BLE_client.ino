@@ -51,16 +51,17 @@ class MyClientCallback : public BLEClientCallbacks {
   }
 /***************** New - Security handled here ********************
 ****** Note: these are the same return values as defaults ********/
-  uint32_t onPassKeyRequest(){
-    Serial.println("Client PassKeyRequest");
-    return 123456;
-  }
-  bool onConfirmPIN(uint32_t pass_key){
-    Serial.print("The passkey YES/NO number: ");Serial.println(pass_key);
-    return true;
+  void onPassKeyEntry() {
+    Serial.println("Client PassKey Entry");
+    NimBLEDevice::injectPassKey(connInfo, 123456);
   }
 
-  void onAuthenticationComplete(BLEConnInfo& connInfo){
+  void onConfirmPIN(const BLEConnInfo& connInfo, uint32_t pass_key) {
+    Serial.print("The passkey YES/NO number: ");Serial.println(pass_key);
+    NimBLEDevice::injectConfirmPIN(connInfo, true);
+  }
+
+  void onAuthenticationComplete(const BLEConnInfo& connInfo){
     Serial.println("Starting BLE work!");
   }
 /*******************************************************************/
@@ -108,8 +109,8 @@ bool connectToServer() {
     }
 
     /** registerForNotify() has been removed and replaced with subscribe() / unsubscribe().
-     *  Subscribe parameter defaults are: notifications=true, notifyCallback=nullptr.
-     *  Unsubscribe takes no parameters.
+     *  Subscribe parameter defaults are: notifications=true, notifyCallback=nullptr, response=true.
+     *  Unsubscribe parameter defaults are: response=true.
      */
     if(pRemoteCharacteristic->canNotify())
       pRemoteCharacteristic->subscribe(true, notifyCallback);

@@ -72,7 +72,6 @@ NimBLEService::~NimBLEService() {
 
 /**
  * @brief Dump details of this BLE GATT service.
- * @return N/A.
  */
 void NimBLEService::dump() {
     NIMBLE_LOGD(LOG_TAG, "Service: uuid:%s, handle: 0x%2x",
@@ -132,7 +131,7 @@ bool NimBLEService::start() {
         ble_gatt_dsc_def* pDsc_a = nullptr;
 
         svc[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
-        svc[0].uuid = &m_uuid.getNative()->u;
+        svc[0].uuid = m_uuid.getBase();
         svc[0].includes = NULL;
 
         int removedCount = 0;
@@ -160,7 +159,7 @@ bool NimBLEService::start() {
             // Nimble requires the last characteristic to have it's uuid = 0 to indicate the end
             // of the characteristics for the service. We create 1 extra and set it to null
             // for this purpose.
-            pChr_a = new ble_gatt_chr_def[numChrs + 1];
+            pChr_a = new ble_gatt_chr_def[numChrs + 1]{};
             int i = 0;
             for(auto chr_it = m_chrVec.begin(); chr_it != m_chrVec.end(); ++chr_it) {
                 if((*chr_it)->m_removed > 0) {
@@ -195,7 +194,7 @@ bool NimBLEService::start() {
                         if((*dsc_it)->m_removed > 0) {
                             continue;
                         }
-                        pDsc_a[d].uuid = &(*dsc_it)->m_uuid.getNative()->u;
+                        pDsc_a[d].uuid = (*dsc_it)->m_uuid.getBase();
                         pDsc_a[d].att_flags = (*dsc_it)->m_properties;
                         pDsc_a[d].min_key_size = 0;
                         pDsc_a[d].access_cb = NimBLEDescriptor::handleGapEvent;
@@ -207,7 +206,7 @@ bool NimBLEService::start() {
                     pChr_a[i].descriptors = pDsc_a;
                 }
 
-                pChr_a[i].uuid = &(*chr_it)->m_uuid.getNative()->u;
+                pChr_a[i].uuid = (*chr_it)->m_uuid.getBase();
                 pChr_a[i].access_cb = NimBLECharacteristic::handleGapEvent;
                 pChr_a[i].arg = (*chr_it);
                 pChr_a[i].flags = (*chr_it)->m_properties;
@@ -248,6 +247,9 @@ bool NimBLEService::start() {
  * @return The handle associated with this service.
  */
 uint16_t NimBLEService::getHandle() {
+    if (m_handle == NULL_HANDLE) {
+        ble_gatts_find_svc(getUUID().getBase(), &m_handle);
+    }
     return m_handle;
 } // getHandle
 
@@ -431,5 +433,14 @@ std::string NimBLEService::toString() {
 NimBLEServer* NimBLEService::getServer() {
     return NimBLEDevice::getServer();
 }// getServer
+
+
+/**
+ * @brief Checks if the service has been started.
+ * @return True if the service has been started.
+ */
+bool NimBLEService::isStarted() {
+    return m_pSvcDef != nullptr;
+}
 
 #endif /* CONFIG_BT_ENABLED && CONFIG_BT_NIMBLE_ROLE_PERIPHERAL */

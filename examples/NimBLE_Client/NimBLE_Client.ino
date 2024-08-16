@@ -56,28 +56,29 @@ class ClientCallbacks : public NimBLEClientCallbacks {
 
     /********************* Security handled here **********************
     ****** Note: these are the same return values as defaults ********/
-    uint32_t onPassKeyRequest(){
-        Serial.println("Client Passkey Request");
-        /** return the passkey to send to the server */
-        return 123456;
+    void onPassKeyEntry(const NimBLEConnInfo& connInfo){
+        Serial.println("Server Passkey Entry");
+        /** This should prompt the user to enter the passkey displayed
+         * on the peer device.
+         */
+        NimBLEDevice::injectPassKey(connInfo, 123456);
     };
 
-    bool onConfirmPIN(uint32_t pass_key){
-        Serial.print("The passkey YES/NO number: ");
-        Serial.println(pass_key);
-    /** Return false if passkeys don't match. */
-        return true;
+    void onConfirmPIN(const NimBLEConnInfo& connInfo, uint32_t pass_key){
+        Serial.print("The passkey YES/NO number: ");Serial.println(pass_key);
+        /** Inject false if passkeys don't match. */
+        NimBLEDevice::injectConfirmPIN(connInfo, true);
     };
 
-    /** Pairing process complete, we can check the results in NimBLEConnInfo */
-    void onAuthenticationComplete(NimBLEConnInfo& connInfo){
+    /** Pairing process complete, we can check the results in connInfo */
+    void onAuthenticationComplete(const NimBLEConnInfo& connInfo){
         if(!connInfo.isEncrypted()) {
             Serial.println("Encrypt connection failed - disconnecting");
-            /** Find the client with the connection handle provided in connInfo */
+            /** Find the client with the connection handle provided in desc */
             NimBLEDevice::getClientByID(connInfo.getConnHandle())->disconnect();
             return;
         }
-    };
+    }
 };
 
 
@@ -128,7 +129,7 @@ bool connectToServer() {
     NimBLEClient* pClient = nullptr;
 
     /** Check if we have a client we should reuse first **/
-    if(NimBLEDevice::getClientListSize()) {
+    if(NimBLEDevice::getCreatedClientCount()) {
         /** Special case when we already know this device, we send false as the
          *  second argument in connect() to prevent refreshing the service database.
          *  This saves considerable time and power.
@@ -151,7 +152,7 @@ bool connectToServer() {
 
     /** No client to reuse? Create a new one. */
     if(!pClient) {
-        if(NimBLEDevice::getClientListSize() >= NIMBLE_MAX_CONNECTIONS) {
+        if(NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
             Serial.println("Max clients reached - no more connections available");
             return false;
         }
@@ -291,9 +292,9 @@ bool connectToServer() {
                 }
             }
 
-            /** registerForNotify() has been deprecated and replaced with subscribe() / unsubscribe().
-             *  Subscribe parameter defaults are: notifications=true, notifyCallback=nullptr, response=false.
-             *  Unsubscribe parameter defaults are: response=false.
+            /** registerForNotify() has been removed and replaced with subscribe() / unsubscribe().
+             *  Subscribe parameter defaults are: notifications=true, notifyCallback=nullptr, response=true.
+             *  Unsubscribe parameter defaults are: response=true.
              */
             if(pChr->canNotify()) {
                 //if(!pChr->registerForNotify(notifyCB)) {

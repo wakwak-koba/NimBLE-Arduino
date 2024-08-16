@@ -34,7 +34,7 @@
 
 /****************************************************
  *         Extended advertising settings            *
- * For use with ESP32C3, ESP32S3, ESP32H2 ONLY!     *
+ *        NOT FOR USE WITH ORIGINAL ESP32           *
  ***************************************************/
 
 /** @brief Un-comment to enable extended advertising */
@@ -53,7 +53,7 @@
 // #define CONFIG_BT_NIMBLE_MAX_PERIODIC_SYNCS 1
 
 /****************************************************
- * END For use with ESP32C3, ESP32S3, ESP32H2 ONLY! *
+ *        END Extended advertising settings         *
  ***************************************************/
 
 
@@ -74,6 +74,9 @@
  *  Uses approx. 32kB of flash memory.
  */
  // #define CONFIG_NIMBLE_CPP_LOG_LEVEL 0
+
+/** @brief Un-comment to enable the debug asserts in NimBLE CPP wrapper.*/
+// #define CONFIG_NIMBLE_CPP_DEBUG_ASSERT_ENABLED 1
 
 /** @brief Un-comment to see NimBLE host return codes as text debug log messages.
  *  Uses approx. 7kB of flash memory.
@@ -234,7 +237,7 @@
 #define CONFIG_BT_NIMBLE_ACL_BUF_COUNT 12
 
 /** @brief ACL Buffer size */
-#define CONFIG_BT_NIMBLE_ACL_BUF_SIZE 255
+#define CONFIG_BT_NIMBLE_TRANSPORT_ACL_SIZE 255
 
 /** @brief HCI Event Buffer size */
 #if CONFIG_BT_NIMBLE_EXT_ADV || CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV
@@ -267,6 +270,10 @@
 #define CONFIG_BT_NIMBLE_ENABLED 1
 #endif
 
+#ifndef CONFIG_BT_CONTROLLER_ENABLED
+#define CONFIG_BT_CONTROLLER_ENABLED 1
+#endif
+
 #ifdef ESP_PLATFORM
 #ifndef CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY
 #define CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY
@@ -288,12 +295,20 @@
 #define CONFIG_IDF_TARGET_ESP32 1
 #endif
 
+#if !defined(CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE)
+#define CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE 1
+#endif
+
+#if !defined(CONFIG_BT_CONTROLLER_DISABLED)
+#define CONFIG_BT_CONTROLLER_DISABLED 0
+#endif
+
 #if CONFIG_BT_NIMBLE_EXT_ADV || CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV
 #  if defined(CONFIG_IDF_TARGET_ESP32)
 #    error Extended advertising is not supported on ESP32.
 #  endif
 #endif
-#endif
+#endif // ESP_PLATFORM
 
 #if CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV && !CONFIG_BT_NIMBLE_EXT_ADV
 #  error Extended advertising must be enabled to use periodic advertising.
@@ -329,4 +344,20 @@
 #  if __has_include (<Arduino.h>)
 #    define NIMBLE_CPP_ARDUINO_STRING_AVAILABLE
 #  endif
+#endif
+
+#ifndef CONFIG_NIMBLE_CPP_DEBUG_ASSERT_ENABLED
+#define CONFIG_NIMBLE_CPP_DEBUG_ASSERT_ENABLED 0
+#endif
+
+#if CONFIG_NIMBLE_CPP_DEBUG_ASSERT_ENABLED && !defined NDEBUG
+void nimble_cpp_assert(const char *file, unsigned line) __attribute((weak, noreturn));
+# define NIMBLE_ATT_VAL_FILE  (__builtin_strrchr(__FILE__, '/') ? \
+                            __builtin_strrchr (__FILE__, '/') + 1 : __FILE__)
+# define NIMBLE_CPP_DEBUG_ASSERT(cond) \
+    if (!(cond)) { \
+        nimble_cpp_assert(NIMBLE_ATT_VAL_FILE, __LINE__); \
+    }
+#else
+# define NIMBLE_CPP_DEBUG_ASSERT(cond) (void(0))
 #endif
