@@ -70,7 +70,7 @@ bool NimBLEExtAdvertising::setInstanceData(uint8_t inst_id, NimBLEExtAdvertiseme
                                        NULL);
 #else
     int rc = ble_gap_ext_adv_configure(inst_id,
-                                       &data.m_params,
+                                       &adv.m_params,
                                        NULL,
                                        NimBLEExtAdvertising::handleGapEvent,
                                        NULL);
@@ -778,7 +778,7 @@ void NimBLEExtAdvertisement::setServices(const bool complete, const uint8_t size
  */
 void NimBLEExtAdvertisement::setServiceData(const NimBLEUUID &uuid, const std::string &data) {
     uint8_t size = uuid.bitSize() / 8;
-    char cdata[2] = {static_cast<char>(1 + size), BLE_HS_ADV_TYPE_SVC_DATA_UUID16};
+    char cdata[2] = {static_cast<char>(1 + size + data.length()), BLE_HS_ADV_TYPE_SVC_DATA_UUID16};
     switch (size) {
         case 2: {
             // [Len] [0x16] [UUID16] data

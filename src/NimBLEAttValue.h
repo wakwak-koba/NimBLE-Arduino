@@ -38,12 +38,20 @@
 #  error CONFIG_NIMBLE_CPP_ATT_VALUE_INIT_LENGTH cannot be less than 1; Range = 1 : 512
 # endif
 
-/* Used to determine if the type passed to a template has a c_str() and length() method. */
+/* Used to determine if the type passed to a template has a data() and size() method. */
 template <typename T, typename = void, typename = void>
-struct Has_c_str_len : std::false_type {};
+struct Has_data_size : std::false_type {};
 
 template <typename T>
-struct Has_c_str_len<T, decltype(void(std::declval<T&>().c_str())), decltype(void(std::declval<T&>().length()))>
+struct Has_data_size<T, decltype(void(std::declval<T&>().data())), decltype(void(std::declval<T&>().size()))>
+    : std::true_type {};
+
+/* Used to determine if the type passed to a template has a c_str() and length() method. */
+template <typename T, typename = void, typename = void>
+struct Has_c_str_length : std::false_type {};
+
+template <typename T>
+struct Has_c_str_length<T, decltype(void(std::declval<T&>().c_str())), decltype(void(std::declval<T&>().length()))>
     : std::true_type {};
 
 /**
@@ -192,12 +200,7 @@ class NimBLEAttValue {
         return setValue(reinterpret_cast<const uint8_t*>(s), len);
     }
 
-    /**
-     * @brief Get a pointer to the value buffer with timestamp.
-     * @param[in] timestamp A pointer to a time_t variable to store the timestamp.
-     * @returns A pointer to the internal value buffer.
-     */
-    const uint8_t* getValue(time_t* timestamp = nullptr) const {
+    const NimBLEAttValue& getValue(time_t* timestamp = nullptr) const {
         if (timestamp != nullptr) {
 # if CONFIG_NIMBLE_CPP_ATT_VALUE_TIMESTAMP_ENABLED
             *timestamp = m_timestamp;
@@ -205,7 +208,7 @@ class NimBLEAttValue {
             *timestamp = 0;
 # endif
         }
-        return m_attr_value;
+        return *this;
     }
 
     /**
@@ -221,39 +224,18 @@ class NimBLEAttValue {
     /**
      * @brief Template to set value to the value of <type\>val.
      * @param [in] s The <type\>value to set.
-     * @param [in] len The length of the value in bytes, defaults to sizeof(T).
-     * @details Only used for types without a `c_str()` method.
+     * @note This function is only availabe if the type T is not a pointer.
      */
     template <typename T>
-# ifdef _DOXYGEN_
-    bool
-# else
-    typename std::enable_if<!Has_c_str_len<T>::value, bool>::type
-# endif
-    setValue(const T& s, uint16_t len = 0) {
-        if (len == 0) {
-            len = sizeof(T);
+    typename std::enable_if<!std::is_pointer<T>::value, bool>::type
+    setValue(const T& s) {
+        if constexpr (Has_data_size<T>::value) {
+            return setValue(reinterpret_cast<const uint8_t*>(s.data()), s.size());
+        } else if constexpr (Has_c_str_length<T>::value) {
+            return setValue(reinterpret_cast<const uint8_t*>(s.c_str()), s.length());
+        } else {
+            return setValue(reinterpret_cast<const uint8_t*>(&s), sizeof(s));
         }
-        return setValue(reinterpret_cast<const uint8_t*>(&s), len);
-    }
-
-    /**
-     * @brief Template to set value to the value of <type\>val.
-     * @param [in] s The <type\>value to set.
-     * @param [in] len The length of the value in bytes, defaults to string.length().
-     * @details Only used if the <type\> has a `c_str()` method.
-     */
-    template <typename T>
-# ifdef _DOXYGEN_
-    bool
-# else
-    typename std::enable_if<Has_c_str_len<T>::value, bool>::type
-# endif
-    setValue(const T& s, uint16_t len = 0) {
-        if (len == 0) {
-            len = s.length();
-        }
-        return setValue(reinterpret_cast<const uint8_t*>(s.c_str()), len);
     }
 
     /**
@@ -271,7 +253,15 @@ class NimBLEAttValue {
         if (!skipSizeCheck && size() < sizeof(T)) {
             return T();
         }
-        return *(reinterpret_cast<const T*>(getValue(timestamp)));
+        if (timestamp != nullptr) {
+# if CONFIG_NIMBLE_CPP_ATT_VALUE_TIMESTAMP_ENABLED
+            *timestamp = m_timestamp;
+# else
+            *timestamp = 0;
+# endif
+        }
+
+        return *(reinterpret_cast<const T*>(m_attr_value));
     }
 
     /*********************** Operators ************************/
